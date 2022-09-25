@@ -105,19 +105,19 @@ class ayame_query_class:
         result = [doc async for doc in cursor]
         return result
 
-    async def complex_search(
-        self,
-        title,
-        tags,
-        author,
-        rate_min,
-        rate_max,
-        date_from,
-        date_to,
-        page,
-        show,
-        _filter={"_id": 0},
-    ):
+    async def complex_search(self,
+                             title,
+                             tags,
+                             author,
+                             rate_min,
+                             rate_max,
+                             date_from,
+                             date_to,
+                             page,
+                             show,
+                             _filter={"_id": 0},
+                             count=False):
+
         queries = []
         if title is not None:
             # title検索クエリ
@@ -162,15 +162,14 @@ class ayame_query_class:
             query = mongodb_query.all_document()
         else:
             query = mongodb_query.and_query(*queries)
+        if count:
+            cursor = mongodb_query.collection_search.count_documents(query)
+            result = await cursor
+        else:
+            cursor = mongodb_query.collection_search.find(query, _filter).sort(
+                "rating", -1).skip(show * (page - 1)).limit(show)
+            result = [doc async for doc in cursor]
 
-        cursor = (
-            mongodb_query.collection_search.find(query, _filter)
-            .sort("rating", -1)
-            .skip(show * (page - 1))
-            .limit(show)
-        )
-        # pprint.pprint(await cursor.explain())
-        result = [doc async for doc in cursor]
         return result
 
 

@@ -120,6 +120,7 @@ async def _complex(
         "id": 1,
         "metatitle": 1,
         "fullname": 1,
+        "title": 1,
         "tags": 1,
         "created_by_unix": 1,
         "rating": 1,
@@ -128,7 +129,81 @@ async def _complex(
     }
     page = abs(page)
     show = min(100, abs(show))
-    result = await ayame_query.complex_search(
-        title, tags, author, rate_min, rate_max, date_from, date_to, page, show, _filter
-    )
+    result = await ayame_query.complex_search(title,
+                                              tags,
+                                              author,
+                                              rate_min,
+                                              rate_max,
+                                              date_from,
+                                              date_to,
+                                              page,
+                                              show,
+                                              _filter,
+                                              )
+    return result
+
+
+@router.get("/complex_count")
+async def _complex_count(title: Optional[str] = Query(None),
+                         tags: Optional[List[str]] = Query(None),
+                         author: Optional[str] = Query(None),
+                         rate_min: Optional[int] = Query(None),
+                         rate_max: Optional[int] = Query(None),
+                         date_from: Optional[str] = Query(None),
+                         date_to: Optional[str] = Query(None),):
+    """
+
+    複合検索に一致した件数を取得する。
+
+    Parameters
+    ----------
+    title: str
+        対象のfullnameもしくはmetatitle。
+
+    tags: List[str] 
+        対象のタグ
+
+    author: str
+        対象の作者
+
+    rate_min: int
+        対象の最小レート
+
+    rate_max: int
+        対象の最大レート
+
+    date_from: str
+        対象の作成日の範囲(始まり)
+
+    date_to: str
+        対象の作成日の範囲(終わり)
+
+    Returns
+    -------
+    count : int
+        一致対象の数。
+
+    """
+    _filter = {
+        "_id": 0,
+        "id": 1,
+        "metatitle": 1,
+        "fullname": 1,
+        "tags": 1,
+        "created_by_unix": 1,
+        "rating": 1,
+        "created_at": 1,
+        "date": 1
+    }
+    result = await ayame_query.complex_search(title,
+                                              tags,
+                                              author,
+                                              rate_min,
+                                              rate_max,
+                                              date_from,
+                                              date_to,
+                                              None,
+                                              None,
+                                              _filter,
+                                              True)
     return result
