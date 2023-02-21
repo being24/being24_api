@@ -1,3 +1,3 @@
 #!/bin/bash
 cd `dirname $0`
-docker build ./build/ -t ayame_fastapi
+docker build ./docker/ -t ayame_fastapi
