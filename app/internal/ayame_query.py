@@ -48,7 +48,11 @@ class ayame_query_class:
         else:
             query_metatitle = mongodb_query.partial_match("metatitle", title)
             query_fullname = mongodb_query.partial_match("fullname", title)
-            query = mongodb_query.or_query(query_fullname, query_metatitle)
+            query_title = mongodb_query.partial_match("title", title)
+            query = mongodb_query.or_query(query_fullname, 
+                                           query_metatitle, 
+                                           query_title,
+                                           )
 
         cursor = (
             mongodb_query.collection_search.find(query, _filter)
@@ -123,7 +127,10 @@ class ayame_query_class:
             # title検索クエリ
             query_metatitle = mongodb_query.partial_match("metatitle", title)
             query_fullname = mongodb_query.partial_match("fullname", title)
-            query = mongodb_query.or_query(query_fullname, query_metatitle)
+            query_title = mongodb_query.partial_match("title", title)
+            query = mongodb_query.or_query(query_fullname, 
+                                           query_metatitle,
+                                           query_title,)
             queries.append(query)
         if tags is not None:
             # タグ検索クエリ
