@@ -7,19 +7,19 @@ services:
       - mongodb
     restart: always
     ports:
-      - "20000:8000"
+      - "20000:8001"
     environment:
       - TZ=Asia/Tokyo
     volumes:
       - ./:/ayame
-    command: /bin/sh -c  "cd /ayame && uvicorn app.main:app --reload --host 0.0.0.0 --proxy-headers --reload-dir ./app"
+    command: /bin/sh -c  "cd /ayame && uv run fastapi dev main.py --host 0.0.0.0 --proxy-headers"
     logging:
      driver: "json-file"
      options:
        max-size: "1m"
        max-file: "1"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8000/" ]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8001/" ]
       interval: 30s
       timeout: 5s
       retries: 5
