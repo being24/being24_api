@@ -1,0 +1,34 @@
+{
+    "name": "Ayame API Development",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "apiserver",
+    "workspaceFolder": "/ayame",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "charliermarsh.ruff",
+                "ms-azuretools.vscode-docker",
+                "eamodio.gitlens"
+            ]
+        }
+    },
+    "forwardPorts": [
+        8000,
+        8081
+    ],
+    "portsAttributes": {
+        "8000": {
+            "label": "API Server",
+            "onAutoForward": "notify"
+        },
+        "8081": {
+            "label": "Mongo Express",
+            "onAutoForward": "silent"
+        }
+    },
+    "postCreateCommand": "uv sync --frozen",
+    "remoteUser": "root",
+    "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+}
