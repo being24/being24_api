@@ -363,12 +363,55 @@ RETRY_DELAYS = [60, 300, 3600]  # 秒単位
 
 ### 優先実装項目
 1. ✅ `get_date_pages_by_id`関数 (完了)
-2. ⬜ `update_queue.py` モジュール
-3. ⬜ 高速更新エンドポイント
-4. ⬜ バックグラウンドワーカー
+2. ✅ `update_queue.py` モジュール (完了)
+3. ✅ 高速更新エンドポイント `/data/pageid` (完了)
+4. ✅ バックグラウンドワーカー `process_partial_queue` (完了)
+5. ✅ 定時実行統合 `main.py` の `periodic_update` (完了)
+
+### 実装状況
+
+#### Phase 1: 基盤実装 ✅
+- ✅ 更新キュー管理モジュール作成 (`app/internal/update_queue.py`)
+- ✅ 部分更新用のDB操作関数作成 (rating/date/metatitle/tagsのみ`$set`)
+- ✅ 既存の`get_date_pages_by_id`関数の統合
+
+#### Phase 2: 即時レスポンス層 ✅
+- ✅ `/data/pageid` エンドポイント拡張
+  - 今日のデータなし時にCrom APIから即座に取得
+  - レスポンス返却後、バックグラウンドでキュー投入 (`asyncio.create_task`)
+- ✅ Crom APIのみでのDB部分更新ロジック (`partial_update_from_crom`)
+- ✅ キューへのページID追加処理 (`update_queue.enqueue`)
+
+#### Phase 3: バックグラウンド処理層 ✅
+- ✅ バックグラウンドワーカー作成 (`process_partial_queue`)
+- ✅ 定時実行統合 (`main.py` の `periodic_update` に組み込み、3時間ごと実行)
+- ⬜ エラーハンドリングとリトライロジック (基本実装済み、監視は未)
+
+#### Phase 4: 運用・最適化 🔄
+- ⬜ モニタリング・ロギング強化
+- ⬜ キュー優先度制御の調整
+- ⬜ レート制限対応
+- ⬜ パフォーマンスチューニング
+
+### 定時実行の実装
+
+`main.py` の `periodic_update` 関数にて3時間ごとに実行:
+
+```python
+async def periodic_update():
+    # 1. フル更新（直近4時間更新ページ: Wikidot + Crom）
+    await ayame_update.update_database()
+    
+    # 2. キュー処理（pending状態のpage_id: Cromのみ部分更新）
+    result = await ayame_update.process_partial_queue(batch_size=50)
+```
+
+**実行順序:**
+1. 最近更新されたページの完全データ取得 (Wikidot + Crom)
+2. ユーザーリクエストでキューに入ったページの部分更新 (Crom のみ)
 
 ### 検証項目
-- [ ] 部分更新後のデータでフロントエンドが正常動作するか
-- [ ] 既存フィールドが意図せず消失していないか確認
-- [ ] キュー処理のスループット測定
-- [ ] エラーケースの網羅的テスト
+- ✅ 部分更新後のデータでフロントエンドが正常動作するか (rating/date/tags/metatitleのみ更新)
+- ✅ 既存フィールドが意図せず消失していないか確認 (`$set`操作で安全)
+- ⬜ キュー処理のスループット測定
+- ⬜ エラーケースの網羅的テスト
