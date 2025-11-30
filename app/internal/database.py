@@ -16,12 +16,15 @@ class database_class:
         self.c_data_name = "data_collection"
         self.c_search_name = "tag_search"
         self.c_update_date_name = "last_update_date"
+        # キュー用コレクション名
+        self.c_update_queue_name = "update_queue"
 
         # プログラム上で使用する
         self.database = self.db_client[self.database_name]
         self.collection_data = self.database[self.c_data_name]
         self.collection_search = self.database[self.c_search_name]
         self.collection_update_date = self.database[self.c_update_date_name]
+        self.collection_update_queue = self.database[self.c_update_queue_name]
 
     async def create_index(self):
         """
@@ -39,6 +42,16 @@ class database_class:
         await self.collection_search.create_index("metatitle")
         await self.collection_search.create_index("rating")
         await self.collection_search.create_index("author")
+        # 更新キューインデックス
+        await self.collection_update_queue.create_index(
+            "page_id", unique=True
+        )  # page_id単一管理
+        await self.collection_update_queue.create_index(
+            [("status", 1), ("priority", -1)]
+        )  # 処理順用
+        await self.collection_update_queue.create_index(
+            [("status", 1), ("updated_at", 1)]
+        )  # タイムアウト検出用
 
     async def database_compact(self):
         """

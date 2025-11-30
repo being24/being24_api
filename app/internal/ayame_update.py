@@ -8,7 +8,7 @@ import string
 import aiofiles
 import dateutil.parser
 
-from app.data_update.get_updated import get_updated_data
+from app.data_update.get_updated import get_updated_data, get_date_pages_by_id
 
 from .command import command_run
 from .database import mongodb_query
@@ -125,6 +125,90 @@ class ayame_update_class:
         await mongodb_query.database_compact()
         self.updating = False
         return True
+
+    async def partial_update_from_crom(self, page_id: int) -> bool:
+        """Crom APIのみを用いて指定page_idのrating/date/tags/metatitleを部分更新。
+
+        既存ドキュメントがなければ最低限のフィールドで作成。
+        履歴(dateごと)は collection_data に挿入（既存差分のみ）。
+        検索用 collection_search は該当フィールドのみ $set 更新。
+        """
+        try:
+            # Cromから日付別rating履歴を取得
+            date_pages = await get_date_pages_by_id(page_id)
+        except Exception as e:
+            logger.error(f"Crom partial fetch failed page_id={page_id}: {e}")
+            return False
+
+        if len(date_pages) == 0:
+            logger.warning(f"No Crom data for page_id={page_id}")
+            return False
+
+        # collection_data へ: 各dateで存在しない or rating差分あれば挿入
+        for d in date_pages:
+            base_doc = {
+                "id": d.id,
+                "date": d.date,
+                "rating": d.rating,
+                "metatitle": d.metatitle,
+                "tags": d.tags,
+            }
+            q_id = mongodb_query.perfect_match("id", d.id)
+            q_date = mongodb_query.perfect_match("date", d.date)
+            query = mongodb_query.and_query(q_id, q_date)
+            exist = await mongodb_query.collection_data.find_one(query, {"rating": 1})
+            if exist is None or exist.get("rating") != d.rating:
+                await mongodb_query.collection_data.insert_one(base_doc)
+
+        # collection_search へ: 部分的に $set
+        q_search = mongodb_query.perfect_match("id", page_id)
+        latest = date_pages[-1]
+        update_fields = {
+            "rating": latest.rating,
+            "metatitle": latest.metatitle,
+            "tags": latest.tags,
+            "date": latest.date,
+            "last_partial_at": datetime.datetime.utcnow(),
+        }
+        exist_search = await mongodb_query.collection_search.find_one(q_search)
+        if exist_search is None:
+            # 新規作成（他フィールドは空）
+            new_doc = {
+                "id": page_id,
+                "fullname": latest.fullname,
+                "title": latest.title or latest.metatitle,
+                **update_fields,
+            }
+            await mongodb_query.collection_search.insert_one(new_doc)
+        else:
+            await mongodb_query.collection_search.update_one(
+                q_search, {"$set": update_fields}
+            )
+        return True
+
+    async def process_partial_queue(self, batch_size: int = 20) -> dict:
+        """pendingキューを処理してCrom部分更新を実施
+        update_queueモジュールは実行時インポートでパス問題を回避
+        """
+        from importlib import import_module
+
+        uq = import_module("app.internal.update_queue")
+        result = {"processed": 0, "failed": 0}
+        pending_ids = await uq.get_pending(batch_size=batch_size)
+        for page_id in pending_ids:
+            await uq.mark_processing(page_id)
+            ok = await self.partial_update_from_crom(page_id)
+            if ok:
+                await uq.mark_completed(page_id)
+                result["processed"] += 1
+            else:
+                await uq.mark_failed(page_id, "partial_update_failed")
+                result["failed"] += 1
+        if result["processed"] or result["failed"]:
+            logger.info(
+                f"partial queue processed={result['processed']} failed={result['failed']}"
+            )
+        return result
 
     async def update_database_document(self, new_document):
         # 2つのデータベースを更新する
