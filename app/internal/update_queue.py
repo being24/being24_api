@@ -14,7 +14,7 @@ MIN_REENQUEUE_INTERVAL_SECONDS = 1800  # 30分
 
 
 def _utc_now() -> datetime.datetime:
-    return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 def _priority_from_request_count(count: int) -> int:
@@ -78,9 +78,11 @@ async def enqueue(page_id: int, force: bool = False) -> bool:
 
 async def get_pending(batch_size: int = 20) -> List[int]:
     """pending状態のpage_idを優先度順に取得"""
-    cursor = mongodb_query.collection_update_queue.find(
-        {"status": STATUS_PENDING}
-    ).sort([("priority", -1), ("requested_at", 1)]).limit(batch_size)
+    cursor = (
+        mongodb_query.collection_update_queue.find({"status": STATUS_PENDING})
+        .sort([("priority", -1), ("requested_at", 1)])
+        .limit(batch_size)
+    )
     ids: List[int] = []
     async for doc in cursor:
         ids.append(int(doc["page_id"]))

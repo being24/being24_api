@@ -168,7 +168,7 @@ class ayame_update_class:
             "metatitle": latest.metatitle,
             "tags": latest.tags,
             "date": latest.date,
-            "last_partial_at": datetime.datetime.utcnow(),
+            "last_partial_at": datetime.datetime.now(datetime.timezone.utc),
         }
         exist_search = await mongodb_query.collection_search.find_one(q_search)
         if exist_search is None:
