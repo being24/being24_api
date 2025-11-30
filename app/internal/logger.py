@@ -1,45 +1,55 @@
 import logging
-import uvicorn
+import logging.handlers
 import pathlib
+
+import uvicorn
 
 
 class logger_class:
     def __init__(self):
-        self.logfile = "warning.log"
+        self.logfile_path = pathlib.Path(__file__).parents[1] / "log" / "uvicorn.log"
         self.logger = logging.getLogger("uvicorn.access")
-        self.setup_loging()
+        self.setup_logging()
 
-    def setup_loging(self):
+    def setup_logging(self):
+        # Ensure log directory exists
+        self.logfile_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Setup uvicorn.access logger
         logger = logging.getLogger("uvicorn.access")
-        console_formatter = uvicorn.logging.ColourizedFormatter(
-            "{asctime} {levelprefix} : {message}",
-            style="{", use_colors=True)
-        logger.handlers[0].setFormatter(console_formatter)
-        logfile = pathlib.Path(self.logfile)
-        logfile.touch()
-        logfile.chmod(0o666)
-        handler = logging.FileHandler(filename=self.logfile)
-        handler.setFormatter(logging.Formatter(
-            "%(asctime)s %(levelname)8s : %(message)s"))
-        handler.setLevel(logging.WARN)
+        logger.setLevel(logging.WARNING)
+
+        # Rotating file handler
+        handler = logging.handlers.RotatingFileHandler(
+            filename=self.logfile_path,
+            encoding="utf-8",
+            maxBytes=32 * 1024,  # 32 KiB
+            backupCount=5,  # Rotate through 5 files
+        )
+        dt_fmt = "%Y-%m-%d %H:%M:%S"
+        formatter = logging.Formatter(
+            "[{asctime}] [{levelname:<8}] {name}: {message}", dt_fmt, style="{"
+        )
+        handler.setFormatter(formatter)
         logger.addHandler(handler)
 
+        # Setup uvicorn logger
         logger = logging.getLogger("uvicorn")
-        console_formatter = uvicorn.logging.ColourizedFormatter(
-            "{asctime} {levelprefix} : {message}",
-            style="{", use_colors=True)
-        logger.handlers[0].setFormatter(console_formatter)
+        logger.setLevel(logging.WARNING)
 
-    def error(self, message):
+        # Setup uvicorn.error logger
+        logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+
+    def error(self, message: str) -> None:
         self.logger.error(message)
 
-    def info(self, message):
+    def info(self, message: str) -> None:
         self.logger.info(message)
 
-    def debug(self, message):
+    def debug(self, message: str) -> None:
         self.logger.debug(message)
 
-    def warning(self, message):
+    def warning(self, message: str) -> None:
         self.logger.warning(message)
 
 
