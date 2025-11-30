@@ -8,12 +8,6 @@ router = APIRouter(
 )
 
 
-@router.on_event("startup")
-async def on_startup():
-    pass
-    # print("hoge")
-
-
 @router.get("/update_database")
 async def update_database(password: str):
     if ayame_update.get_update_password() == password:

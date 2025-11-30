@@ -82,7 +82,7 @@ class ayame_update_class:
 
         # 直近4時間以内に更新されたページのデータ取得
         try:
-            updated = get_updated_data(limit=120, hours=4)
+            updated = await get_updated_data(limit=120, hours=4)
         except Exception as e:
             logger.error(f"get_updated_data failed: {e}")
             self.updating = False
