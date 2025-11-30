@@ -15,11 +15,11 @@
         }
     },
     "forwardPorts": [
-        8000,
+        8001,
         8081
     ],
     "portsAttributes": {
-        "8000": {
+        "8001": {
             "label": "API Server",
             "onAutoForward": "notify"
         },
