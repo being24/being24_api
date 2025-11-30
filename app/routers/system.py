@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Request, Query
-from typing import Optional, List
-from ..internal.ayame_query import ayame_query
+from fastapi import APIRouter
 from ..internal.ayame_update import ayame_update
-from ..internal.ayame_fix import ayame_fix
+
 router = APIRouter(
     prefix="/system",
     tags=["system"],

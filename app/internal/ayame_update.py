@@ -1,28 +1,24 @@
-from .database import mongodb_query
-import datetime
-import copy
-import dateutil.parser
-import json
-import aiofiles
 import asyncio
+import copy
+import datetime
+import json
 import random
 import string
-from .logger import logger
+
+import aiofiles
+import dateutil.parser
+
 from .command import command_run
+from .database import mongodb_query
+from .logger import logger
 
 
-class ayame_update_class():
+class ayame_update_class:
     def __init__(self):
         self.updating = False
         pass
 
-    def same_dictionary_check(
-        self,
-        dict1,
-        dict2,
-        exclusion_key_list=[
-            "date",
-            "_id"]):
+    def same_dictionary_check(self, dict1, dict2, exclusion_key_list=["date", "_id"]):
         """
         辞書が同じならTrue
         """
@@ -40,16 +36,12 @@ class ayame_update_class():
             return False
 
     def get_today(self):
-        JST = datetime.timezone(datetime.timedelta(hours=+9), 'JST')
+        JST = datetime.timezone(datetime.timedelta(hours=+9), "JST")
         dt_now = datetime.datetime.now(JST)
         return str(dt_now.date())
 
     def randomname(self, n):
-        return ''.join(
-            random.choices(
-                string.ascii_letters +
-                string.digits,
-                k=n))
+        return "".join(random.choices(string.ascii_letters + string.digits, k=n))
 
     def get_update_password(self):
         password_file = "password.txt"
@@ -59,22 +51,18 @@ class ayame_update_class():
                 password = f.read()
         except BaseException:
             password = str(self.randomname(10))
-            f = open(password_file, 'w')
+            f = open(password_file, "w")
             f.write(password)
             f.close()
         return password
 
     async def load_json_data(self, filepath="ayame/data/data.json"):
-        async with aiofiles.open(
-            filepath,
-            mode='r'
-        ) as f:
+        async with aiofiles.open(filepath, mode="r") as f:
             json_contents = await f.read()
         return json.loads(str(json_contents))
 
     async def sync_json_data(self):
-        result = await command_run("python3 src/create_json.py",
-                                   "/ayame/ayame")
+        result = await command_run("python3 src/create_json.py", "/ayame/ayame")
         if result.returncode == 0:
             logger.info(result.stdout)
             return True
@@ -120,12 +108,17 @@ class ayame_update_class():
         全区間保有データベースの更新
         """
         new_document = copy.deepcopy(new_document)
+
+        # idキーの存在確認
+        if "id" not in new_document:
+            logger.warning(f"Document missing 'id' key, skipping: {new_document}")
+            return
+
         # idから全区間データベース内の最新ドキュメントを取得し
         # それが実行時の日付でなければ新規作成を行い、あれば更新を行う。
         query = mongodb_query.perfect_match("id", new_document["id"])
         sort = [("date", -1)]
-        document = await mongodb_query.collection_data.find_one(query,
-                                                                sort=sort)
+        document = await mongodb_query.collection_data.find_one(query, sort=sort)
 
         if document is None:
             # 新しいデータ
@@ -145,6 +138,12 @@ class ayame_update_class():
         検索用データベースの更新
         """
         new_document = copy.deepcopy(new_document)
+
+        # idキーの存在確認
+        if "id" not in new_document:
+            logger.warning(f"Document missing 'id' key, skipping: {new_document}")
+            return
+
         # 現存するドキュメントを取得し、あれば更新なければ新規作成をする
         query = mongodb_query.perfect_match("id", new_document["id"])
         document = await mongodb_query.collection_search.find_one(query)
@@ -154,37 +153,24 @@ class ayame_update_class():
         else:
             # 存在する場合入れ替え
             query = mongodb_query.perfect_match("_id", document["_id"])
-            await mongodb_query.collection_search.replace_one(query,
-                                                              new_document)
+            await mongodb_query.collection_search.replace_one(query, new_document)
         return
 
     async def update_lock(self):
-
-        new_document = {
-            "name": "update_status",
-            "status": "updating"
-        }
+        new_document = {"name": "update_status", "status": "updating"}
         query = mongodb_query.perfect_match("name", "update_status")
         document = await mongodb_query.collection_update_date.find_one(query)
         if document:
-            await mongodb_query.collection_update_date.replace_one(
-                query,
-                new_document)
+            await mongodb_query.collection_update_date.replace_one(query, new_document)
         else:
             await mongodb_query.collection_update_date.insert_one(new_document)
 
     async def update_unlock(self):
-
-        new_document = {
-            "name": "update_status",
-            "status": "stop"
-        }
+        new_document = {"name": "update_status", "status": "stop"}
         query = mongodb_query.perfect_match("name", "update_status")
         document = await mongodb_query.collection_update_date.find_one(query)
         if document:
-            await mongodb_query.collection_update_date.replace_one(
-                query,
-                new_document)
+            await mongodb_query.collection_update_date.replace_one(query, new_document)
         else:
             await mongodb_query.collection_update_date.insert_one(new_document)
 
@@ -198,7 +184,11 @@ class ayame_update_class():
             "comments",
             "revisions",
             "created_by_id",
-            "updated_by_id", "commented_by_id", "id", "article_id"]
+            "updated_by_id",
+            "commented_by_id",
+            "id",
+            "article_id",
+        ]
         list_keys = ["tags"]
         if "article_id" in doc.keys():
             doc["id"] = doc["article_id"]
@@ -217,9 +207,7 @@ class ayame_update_class():
         return doc
 
     async def convert_database_type(self):
-        collections = [
-            mongodb_query.collection_data,
-            mongodb_query.collection_search]
+        collections = [mongodb_query.collection_data, mongodb_query.collection_search]
 
         for collection in collections:
             query = mongodb_query.all_document()
@@ -231,8 +219,7 @@ class ayame_update_class():
                     # databaseの内部IDは削除
                     del new_document["_id"]
                     query = mongodb_query.perfect_match("_id", document["_id"])
-                    await collection.replace_one(
-                        query, new_document)
+                    await collection.replace_one(query, new_document)
                     count += 1
                 except BaseException:
                     print(count)
@@ -246,7 +233,5 @@ ayame_update = ayame_update_class()
 if __name__ == "__main__":
     # import json
 
-    doc = {
-
-    }
+    doc = {}
     ayame_update.convert_docment_type(doc)

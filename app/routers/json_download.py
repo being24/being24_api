@@ -1,8 +1,6 @@
-
-from fastapi import APIRouter, Request, Query
-from fastapi.staticfiles import StaticFiles
-from typing import Optional, List
+from fastapi import APIRouter
 from fastapi.responses import FileResponse
+
 router = APIRouter(
     prefix="/json",
     tags=["json"],
@@ -19,9 +17,11 @@ async def get_data():
         filename="data.json")
 """
 
+
 @router.get("/page_ids")
 async def get_page_ids():
     return FileResponse(
         "ayame/data/page_ids.json",
-        media_type='application/octet-stream',
-        filename="page_ids.json")
+        media_type="application/octet-stream",
+        filename="page_ids.json",
+    )

@@ -1,16 +1,17 @@
-from .database import mongodb_query
 import datetime
 import pprint
 
+from .database import mongodb_query
 
-class ayame_query_class():
+
+class ayame_query_class:
     async def pageid_match(self, pageid, date=None, _filter={"_id": 0}):
         """
         idの完全一致
         """
         if date is not None:
             try:
-                date = datetime.datetime.strptime(date, '%Y-%m-%d').date()
+                date = datetime.datetime.strptime(date, "%Y-%m-%d").date()
                 date = str(date)
             except ValueError:
                 date = None
@@ -39,8 +40,7 @@ class ayame_query_class():
         result = await cursor
         return result
 
-    async def title_partial_match(self, title, page,
-                                  show, _filter={"_id": 0}):
+    async def title_partial_match(self, title, page, show, _filter={"_id": 0}):
         """
         fullnameもしくはmetatitleの部分一致
         """
@@ -51,14 +51,17 @@ class ayame_query_class():
             query_fullname = mongodb_query.partial_match("fullname", title)
             query = mongodb_query.or_query(query_fullname, query_metatitle)
 
-        cursor = mongodb_query.collection_search.find(query, _filter).sort(
-            "rating", -1).skip(show * (page - 1)).limit(show)
+        cursor = (
+            mongodb_query.collection_search.find(query, _filter)
+            .sort("rating", -1)
+            .skip(show * (page - 1))
+            .limit(show)
+        )
         # pprint.pprint(await cursor.explain())
         result = [doc async for doc in cursor]
         return result
 
-    async def tag_partial_match(self, tags, page,
-                                show, _filter={"_id": 0}):
+    async def tag_partial_match(self, tags, page, show, _filter={"_id": 0}):
         """
         tagの部分一致and検索
         """
@@ -69,46 +72,53 @@ class ayame_query_class():
                 query = mongodb_query.and_query(query_temp)
             else:
                 query = mongodb_query.and_query(query, query_temp)
-        cursor = mongodb_query.collection_search.find(query, _filter).sort(
-            "rating", -1).skip(show * (page - 1)).limit(show)
+        cursor = (
+            mongodb_query.collection_search.find(query, _filter)
+            .sort("rating", -1)
+            .skip(show * (page - 1))
+            .limit(show)
+        )
         # pprint.pprint(await cursor.explain())
         result = [doc async for doc in cursor]
         return result
 
-    async def create_at_range_match(self, _from, _to, page,
-                                    show, _filter={"_id": 0}):
+    async def create_at_range_match(self, _from, _to, page, show, _filter={"_id": 0}):
         try:
-            gte = datetime.datetime.strptime(_from, '%Y-%m-%d')
-            lte = datetime.datetime.strptime(_to, '%Y-%m-%d')
+            gte = datetime.datetime.strptime(_from, "%Y-%m-%d")
+            lte = datetime.datetime.strptime(_to, "%Y-%m-%d")
         except ValueError:
             return []
         query = mongodb_query.range_match("created_at", gte=gte, lte=lte)
-        cursor = mongodb_query.collection_search.find(query, _filter).sort(
-            "rating", -1).skip(show * (page - 1)).limit(show)
+        cursor = (
+            mongodb_query.collection_search.find(query, _filter)
+            .sort("rating", -1)
+            .skip(show * (page - 1))
+            .limit(show)
+        )
         # pprint.pprint(await cursor.explain())
         result = [doc async for doc in cursor]
         return result
 
     async def all_pageid_data(self, pageid, _filter={"_id": 0}):
         query = mongodb_query.perfect_match("id", pageid)
-        cursor = mongodb_query.collection_data.find(query, _filter).sort(
-            "date", -1)
+        cursor = mongodb_query.collection_data.find(query, _filter).sort("date", -1)
         # pprint.pprint(await cursor.explain())
         result = [doc async for doc in cursor]
         return result
 
-    async def complex_search(self,
-                             title,
-                             tags,
-                             author,
-                             rate_min,
-                             rate_max,
-                             date_from,
-                             date_to,
-                             page,
-                             show,
-                             _filter={"_id": 0}):
-
+    async def complex_search(
+        self,
+        title,
+        tags,
+        author,
+        rate_min,
+        rate_max,
+        date_from,
+        date_to,
+        page,
+        show,
+        _filter={"_id": 0},
+    ):
         queries = []
         if title is not None:
             # title検索クエリ
@@ -137,14 +147,14 @@ class ayame_query_class():
             queries.append(query)
         if date_from is not None:
             try:
-                date_from = datetime.datetime.strptime(date_from, '%Y-%m-%d')
+                date_from = datetime.datetime.strptime(date_from, "%Y-%m-%d")
                 query = mongodb_query.range_match("created_at", gte=date_from)
                 queries.append(query)
             except ValueError:
                 pass
         if date_to is not None:
             try:
-                date_to = datetime.datetime.strptime(date_to, '%Y-%m-%d')
+                date_to = datetime.datetime.strptime(date_to, "%Y-%m-%d")
                 query = mongodb_query.range_match("created_at", lte=date_to)
                 queries.append(query)
             except ValueError:
@@ -154,8 +164,12 @@ class ayame_query_class():
         else:
             query = mongodb_query.and_query(*queries)
 
-        cursor = mongodb_query.collection_search.find(query, _filter).sort(
-            "rating", -1).skip(show * (page - 1)).limit(show)
+        cursor = (
+            mongodb_query.collection_search.find(query, _filter)
+            .sort("rating", -1)
+            .skip(show * (page - 1))
+            .limit(show)
+        )
         # pprint.pprint(await cursor.explain())
         result = [doc async for doc in cursor]
         return result

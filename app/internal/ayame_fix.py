@@ -1,20 +1,22 @@
-from .database import mongodb_query
-import datetime
-import copy
-import dateutil.parser
-import json
-import aiofiles
 import asyncio
-from .logger import logger
+import copy
+import datetime
+import json
+
+import aiofiles
+import dateutil.parser
+
 from .command import command_run
+from .database import mongodb_query
+from .logger import logger
 
 
-class ayame_fix_class():
+class ayame_fix_class:
     def __init__(self):
         pass
 
     def load_fix_pageids(self):
-        with open('ayame/data/fix_page_ids.json') as f:
+        with open("ayame/data/fix_page_ids.json") as f:
             df = json.load(f)
         return df
 
@@ -29,11 +31,11 @@ class ayame_fix_class():
 
             collection = mongodb_query.collection_data
             query = mongodb_query.perfect_match("fullname", fullname)
-            update = await collection.update_many(query, {'$set': {'id': pageid}})
+            update = await collection.update_many(query, {"$set": {"id": pageid}})
 
             collection = mongodb_query.collection_search
             query = mongodb_query.perfect_match("fullname", fullname)
-            update = await collection.update_many(query, {'$set': {'id': pageid}})
+            update = await collection.update_many(query, {"$set": {"id": pageid}})
 
 
 ayame_fix = ayame_fix_class()

@@ -1,13 +1,15 @@
-import motor.motor_asyncio
 import asyncio
 import re
+
+import motor.motor_asyncio
 
 
 class database_class:
     def __init__(self):
         # mongodbの接続先
         self.db_client = motor.motor_asyncio.AsyncIOMotorClient(
-            'mongodb://mongodb:27017')
+            "mongodb://mongodb:27017"
+        )
         # データベース名の宣言
         self.database_name = "ayame_api"
         # コレクション名の宣言
@@ -18,10 +20,8 @@ class database_class:
         # プログラム上で使用する
         self.database = self.db_client[self.database_name]
         self.collection_data = self.database[self.c_data_name]
-        self.collection_search = self.database[
-            self.c_search_name]
-        self.collection_update_date = self.database[
-            self.c_update_date_name]
+        self.collection_search = self.database[self.c_search_name]
+        self.collection_update_date = self.database[self.c_update_date_name]
 
     async def create_index(self):
         """
@@ -76,7 +76,12 @@ class mongodb_query_class(database_class):
         """
         return {field: {"$regex": f"{re.escape(value)}$"}}
 
-    def range_match(self, field, gte=None, lte=None,):
+    def range_match(
+        self,
+        field,
+        gte=None,
+        lte=None,
+    ):
         """
         gte = 以上
         lte = 以下
