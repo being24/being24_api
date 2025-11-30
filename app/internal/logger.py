@@ -2,12 +2,10 @@ import logging
 import logging.handlers
 import pathlib
 
-import uvicorn
-
 
 class logger_class:
     def __init__(self):
-        self.logfile_path = pathlib.Path(__file__).parents[1] / "log" / "uvicorn.log"
+        self.logfile_path = pathlib.Path(__file__).parents[2] / "log" / "uvicorn.log"
         self.logger = logging.getLogger("uvicorn.access")
         self.setup_logging()
 
