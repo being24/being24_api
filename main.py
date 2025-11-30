@@ -12,8 +12,11 @@ from app.routers import change, data, json_download, search, system, tags_metada
 # 3時間ごとにデータベース更新
 async def periodic_update():
     print("Start periodic update")
+    # フル更新（Wikidot + Crom）
     await ayame_update.update_database()
-    print("Update finished")
+    # キュー処理（Cromのみ部分更新 → 完全更新待ち）
+    result = await ayame_update.process_partial_queue(batch_size=50)
+    print(f"Update finished. Queue: {result}")
 
 
 @asynccontextmanager
