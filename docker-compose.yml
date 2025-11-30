@@ -1,4 +1,3 @@
-version: '3.8'
 services:
 
   apiserver:
@@ -9,7 +8,7 @@ services:
       - mongodb
     restart: always
     ports:
-      - 20000:8000
+      - "20000:8000"
     environment:
       - TZ=Asia/Tokyo
     volumes:
@@ -20,6 +19,11 @@ services:
      options:
        max-size: "1m"
        max-file: "1"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
   
   mongodb:
     image: mongo
@@ -37,11 +41,12 @@ services:
 
   mongo-express:
     ports:
-      - 20001:8081
+      - "20001:8081"
     environment:
-      - 'ME_CONFIG_OPTIONS_EDITORTHEME=ambiance'
-      - 'ME_CONFIG_MONGODB_SERVER=mongodb'
-      - 'ME_CONFIG_BASICAUTH_USERNAME=user'
-      - 'ME_CONFIG_BASICAUTH_PASSWORD=password'
+      - ME_CONFIG_OPTIONS_EDITORTHEME=ambiance
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH_USERNAME=user
+      - ME_CONFIG_BASICAUTH_PASSWORD=password
     image: mongo-express
+    restart: always
     
