@@ -1,5 +1,4 @@
 import datetime
-import pprint
 
 from .database import mongodb_query
 
