@@ -1,13 +1,8 @@
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from .routers import search
-from .routers import data
-from .routers import change
-from .routers import system
-from .routers import json_download
+from fastapi.middleware.cors import CORSMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from .routers import tags_metadata
+from app.routers import change, data, json_download, search, system, tags_metadata
 
 
 app = FastAPI(openapi_tags=tags_metadata.tags_metadata)
@@ -21,7 +16,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 # プロキシヘッダー読み取り
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
